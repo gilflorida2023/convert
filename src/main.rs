@@ -1,72 +1,10 @@
 use std::{env, fs, io};
 use std::path::{Path, PathBuf};
+use std::fs::File;
+use std::io::{BufReader, BufWriter, Write, Read};
+/*
 
-fn main() {
-    // Get the first argument (after the program name)
-    let args: Vec<String> = env::args().collect();
-    if args.len() < 2 {
-        eprintln!("Usage: cargo run -- <directory_path>");
-        return;
-    }
-
-    let directory_path = Path::new(&args[1]);
-    if let Err(e) = process_directory(directory_path) {
-        eprintln!("Error: {}", e);
-    }
-}
-
-fn process_directory(directory_path: &Path) -> io::Result<()> {
-    // Check if the directory exists and is a directory
-    if !directory_path.is_dir() {
-        return Err(io::Error::new(io::ErrorKind::NotFound, "The path provided is not a directory"));
-    }
-
-    // Read all files in the directory
-    match fs::read_dir(directory_path) {
-        Ok(entries) => {
-            for entry_result in entries {
-                match entry_result {
-                    Ok(entry) => {
-                        if let Some(extension) = entry.path().extension() {
-                            if extension == "bin" {
-                                // Process the file
-                                println!("Found .bin file: {:?}", entry.path());
-                            }
-                        }
-                    }
-                    Err(e) => {
-                        eprintln!("Error reading directory entry: {}", e);
-                    }
-                }
-            }
-        }
-        Err(e) => eprintln!("Error reading directory: {}", e),
-    }
-
-    Ok(())
-}
-
-/*use std::fs::File;
-use std::io::{self, BufReader, BufWriter, Write, Read};
-use std::path::PathBuf;
-use clap::Parser;
-
-/// Command line arguments for the binary to CSV converter
-//#[derive(Parser, Debug)]
-#[command(author, version, about, long_about = None)]
-pub struct Args {
-    /// Directory containing binary window files
-    #[arg(short, long)]
-    input_directory: PathBuf,
-
-    /// Directory to write CSV files to
-    #[arg(short, long)]
-    output_directory: PathBuf,
-
-    /// Enable verbose output
-    #[arg(short, long)]
-    verbose: bool,
-}
+ */
 
 /// Converts a binary window file to CSV format
 fn convert_file(input_path: &PathBuf, output_path: &PathBuf, verbose: bool) -> io::Result<()> {
@@ -115,15 +53,87 @@ fn convert_file(input_path: &PathBuf, output_path: &PathBuf, verbose: bool) -> i
             Err(e) => return Err(e),
         }
     }
-
     if verbose {
-        println!("Wrote {} prime records to {}", 
-            count,
-            output_path.file_name().unwrap().to_string_lossy());
+    println!("Wrote {} prime records to {}", 
+        count,
+        output_path.file_name().unwrap().to_string_lossy());
+    }
+    Ok(())
+}
+
+fn main() -> Result<(), io::Error> {
+    // Get the first argument (after the program name)
+    let args: Vec<String> = env::args().collect();
+    if args.len() < 2 {
+        eprintln!("Usage: cargo run -- <directory_path>");
+        return Ok(()); // Change from return; to return Ok(())
+    }
+
+    let directory_path = Path::new(&args[1]);
+    if let Err(e) = process_directory(directory_path) {
+        eprintln!("Error: {}", e);
+    }
+    Ok(())
+}
+
+fn process_directory(directory_path: &Path) -> io::Result<()> {
+    // Check if the directory exists and is a directory
+    if !directory_path.is_dir() {
+        return Err(io::Error::new(io::ErrorKind::NotFound, "The path provided is not a directory"));
+    }
+
+    // Read all files in the directory
+    match fs::read_dir(directory_path) {
+        Ok(entries) => {
+            for entry_result in entries {
+                match entry_result {
+                    Ok(entry) => {
+                        if let Some(extension) = entry.path().extension() {
+                            if extension == "bin" {
+                                // Process the file
+                                let  input_path: PathBuf = entry.path().to_path_buf(); // Create a mutable PathBuf from the original path
+                                let mut output_path: PathBuf = entry.path().to_path_buf(); // Create a mutable PathBuf from the original path
+
+                                output_path.set_extension("csv"); // Change the extension to .csv
+                                println!("converting from {:?} to {:?}.", input_path,output_path);
+                                convert_file(&input_path, &output_path, true)?;
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("Error reading directory entry: {}", e);
+                    }
+                }
+            }
+        }
+        Err(e) => eprintln!("Error reading directory: {}", e),
     }
 
     Ok(())
 }
+
+/*use std::fs::File;
+use std::io::{self, BufReader, BufWriter, Write, Read};
+use std::path::PathBuf;
+use clap::Parser;
+
+/// Command line arguments for the binary to CSV converter
+//#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+pub struct Args {
+    /// Directory containing binary window files
+    #[arg(short, long)]
+    input_directory: PathBuf,
+
+    /// Directory to write CSV files to
+    #[arg(short, long)]
+    output_directory: PathBuf,
+
+    /// Enable verbose output
+    #[arg(short, long)]
+    verbose: bool,
+}
+
 
 fn main() -> io::Result<()> {
     let simulated_args = vec![
