@@ -2,9 +2,11 @@ use std::{env, fs, io};
 use std::path::{Path, PathBuf};
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Write, Read};
+use clap::Parser;
 /*
  Convert binary files created by the sieve utility into human readible csv's.
- */
+
+*/
 
 /// Converts a binary window file to CSV format
 fn convert_file(input_path: &PathBuf, output_path: &PathBuf, verbose: bool) -> io::Result<()> {
@@ -61,7 +63,7 @@ fn convert_file(input_path: &PathBuf, output_path: &PathBuf, verbose: bool) -> i
     Ok(())
 }
 
-fn process_directory(directory_path: &Path) -> io::Result<()> {
+fn process_directory(directory_path: &Path,verbose:bool) -> io::Result<()> {
     // Check if the directory exists and is a directory
     if !directory_path.is_dir() {
         return Err(io::Error::new(io::ErrorKind::NotFound, "The path provided is not a directory"));
@@ -77,10 +79,11 @@ fn process_directory(directory_path: &Path) -> io::Result<()> {
                                 // Process the file
                                 let  input_path: PathBuf = entry.path().to_path_buf(); // Create a mutable PathBuf from the original path
                                 let mut output_path: PathBuf = entry.path().to_path_buf(); // Create a mutable PathBuf from the original path
-
                                 output_path.set_extension("csv"); // Change the extension to .csv
-                                println!("converting from {:?} to {:?}.", input_path,output_path);
-                                convert_file(&input_path, &output_path, true)?;
+                                if verbose {
+                                    println!("converting from {:?} to {:?}.", input_path,output_path);
+                                }
+                                convert_file(&input_path, &output_path, verbose)?;
                             }
                         }
                     }
@@ -95,7 +98,23 @@ fn process_directory(directory_path: &Path) -> io::Result<()> {
     Ok(())
 }
 
+
+/// Command line arguments for the binary to CSV converter
+
+#[derive(Parser)]
+#[command(author, version, about, long_about = None)]
+pub struct Args {
+    /// Directory containing binary window files
+    #[arg(short = 'i', long = "input_dir")]
+    input_directory: PathBuf,
+
+    /// Enable verbose output
+    #[arg(short = 'v', long = "verbose")]
+    verbose: bool,
+}
+
 fn main() -> Result<(), io::Error> {
+    /*
     // Get the first argument (after the program name)
     let args: Vec<String> = env::args().collect();
     if args.len() < 2 {
@@ -103,22 +122,21 @@ fn main() -> Result<(), io::Error> {
         eprintln!("Convert binary files created by the sieve utility into human-readable CSVs.");
         return Ok(()); // Change from return; to return Ok(())
     }
-
     let directory_path = Path::new(&args[1]);
-    if let Err(e) = process_directory(directory_path) {
+    */
+    let args = Args::parse();
+    if let Err(e) = process_directory(&args.input_directory, args.verbose) {
         eprintln!("Error: {}", e);
     }
+    println!("all done");
     Ok(())
 }
 
 /*use std::fs::File;
 use std::io::{self, BufReader, BufWriter, Write, Read};
 use std::path::PathBuf;
-use clap::Parser;
 
 /// Command line arguments for the binary to CSV converter
-//#[derive(Parser, Debug)]
-#[command(author, version, about, long_about = None)]
 pub struct Args {
     /// Directory containing binary window files
     #[arg(short, long)]
@@ -135,15 +153,7 @@ pub struct Args {
 
 
 fn main() -> io::Result<()> {
-    let simulated_args = vec![
-        "convert",
-        "-i", "/home/minty/projects/rust/convert/data/",
-        "-o", "/home/minty/projects/rust/convert/data/",
-        "-v",
-    ];
-    let args = Args::parse_from(simulated_args);
-
-    //let args = Args::parse();
+    let args = Args::parse();
 
     // Create output directory if it doesn't exist
     std::fs::create_dir_all(&args.output_directory)?;
@@ -169,11 +179,6 @@ fn main() -> io::Result<()> {
         }
     }
 
-    println!("\nConversion Summary:");
-    println!("------------------");
-    println!("Total files converted: {}", total_files);
-    println!("Input directory: {}", args.input_directory.display());
-    println!("Output directory: {}", args.output_directory.display());
 
     Ok(())
 }
