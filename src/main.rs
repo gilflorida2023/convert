@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Write, Read};
 /*
-
+ Convert binary files created by the sieve utility into human readible csv's.
  */
 
 /// Converts a binary window file to CSV format
@@ -61,27 +61,11 @@ fn convert_file(input_path: &PathBuf, output_path: &PathBuf, verbose: bool) -> i
     Ok(())
 }
 
-fn main() -> Result<(), io::Error> {
-    // Get the first argument (after the program name)
-    let args: Vec<String> = env::args().collect();
-    if args.len() < 2 {
-        eprintln!("Usage: cargo run -- <directory_path>");
-        return Ok(()); // Change from return; to return Ok(())
-    }
-
-    let directory_path = Path::new(&args[1]);
-    if let Err(e) = process_directory(directory_path) {
-        eprintln!("Error: {}", e);
-    }
-    Ok(())
-}
-
 fn process_directory(directory_path: &Path) -> io::Result<()> {
     // Check if the directory exists and is a directory
     if !directory_path.is_dir() {
         return Err(io::Error::new(io::ErrorKind::NotFound, "The path provided is not a directory"));
     }
-
     // Read all files in the directory
     match fs::read_dir(directory_path) {
         Ok(entries) => {
@@ -108,7 +92,22 @@ fn process_directory(directory_path: &Path) -> io::Result<()> {
         }
         Err(e) => eprintln!("Error reading directory: {}", e),
     }
+    Ok(())
+}
 
+fn main() -> Result<(), io::Error> {
+    // Get the first argument (after the program name)
+    let args: Vec<String> = env::args().collect();
+    if args.len() < 2 {
+        eprintln!("Usage: cargo run -- <directory_path>");
+        eprintln!("Convert binary files created by the sieve utility into human-readable CSVs.");
+        return Ok(()); // Change from return; to return Ok(())
+    }
+
+    let directory_path = Path::new(&args[1]);
+    if let Err(e) = process_directory(directory_path) {
+        eprintln!("Error: {}", e);
+    }
     Ok(())
 }
 
