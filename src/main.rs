@@ -1,12 +1,10 @@
-use std::{env, fs, io};
+use std::{fs, io};
 use std::path::{Path, PathBuf};
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Write, Read};
 use clap::Parser;
-/*
- Convert binary files created by the sieve utility into human readible csv's.
-
-*/
+use std::env;
+use std::thread;
 
 /// Converts a binary window file to CSV format
 fn convert_file(input_path: &PathBuf, output_path: &PathBuf, verbose: bool) -> io::Result<()> {
@@ -40,6 +38,7 @@ fn convert_file(input_path: &PathBuf, output_path: &PathBuf, verbose: bool) -> i
     // Read and convert prime records
     let mut count = 0;
     loop {
+        thread::yield_now();
         let mut prime_bytes = [0u8; 8];
         let mut next_value_bytes = [0u8; 8];
         
@@ -103,9 +102,9 @@ fn process_directory(directory_path: &Path,verbose:bool) -> io::Result<()> {
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
-pub struct Args {
+pub struct Cli {
     /// Directory containing binary window files
-    #[arg(short = 'i', long = "input_dir")]
+    #[arg(short = 'i', long = "input_dir", required = true)]
     input_directory: PathBuf,
 
     /// Enable verbose output
@@ -114,72 +113,10 @@ pub struct Args {
 }
 
 fn main() -> Result<(), io::Error> {
-    /*
-    // Get the first argument (after the program name)
-    let args: Vec<String> = env::args().collect();
-    if args.len() < 2 {
-        eprintln!("Usage: cargo run -- <directory_path>");
-        eprintln!("Convert binary files created by the sieve utility into human-readable CSVs.");
-        return Ok(()); // Change from return; to return Ok(())
-    }
-    let directory_path = Path::new(&args[1]);
-    */
-    let args = Args::parse();
+    let args = Cli::parse();
     if let Err(e) = process_directory(&args.input_directory, args.verbose) {
         eprintln!("Error: {}", e);
     }
     println!("all done");
     Ok(())
 }
-
-/*use std::fs::File;
-use std::io::{self, BufReader, BufWriter, Write, Read};
-use std::path::PathBuf;
-
-/// Command line arguments for the binary to CSV converter
-pub struct Args {
-    /// Directory containing binary window files
-    #[arg(short, long)]
-    input_directory: PathBuf,
-
-    /// Directory to write CSV files to
-    #[arg(short, long)]
-    output_directory: PathBuf,
-
-    /// Enable verbose output
-    #[arg(short, long)]
-    verbose: bool,
-}
-
-
-fn main() -> io::Result<()> {
-    let args = Args::parse();
-
-    // Create output directory if it doesn't exist
-    std::fs::create_dir_all(&args.output_directory)?;
-
-    let mut window_num = 0;
-    let mut total_files = 0;
-    let _total_primes = 0;
-
-    loop {
-        let input_path = args.input_directory.join(format!("window_{}.bin", window_num));
-        let output_path = args.output_directory.join(format!("window_{}.csv", window_num));
-
-        match convert_file(&input_path, &output_path, args.verbose) {
-            Ok(_) => {
-                total_files += 1;
-                if args.verbose {
-                    println!("Successfully converted window_{}.bin", window_num);
-                }
-                window_num += 1;
-            },
-            Err(e) if e.kind() == io::ErrorKind::NotFound => break,
-            Err(e) => return Err(e),
-        }
-    }
-
-
-    Ok(())
-}
-*/
