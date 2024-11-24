@@ -5,7 +5,10 @@ use std::io::{BufReader, BufWriter, Write, Read};
 use clap::Parser;
 use std::env;
 use std::thread;
+use std::time::Duration;
+use crate::elapsed_time::measure_elapsed_time;
 
+mod elapsed_time;
 /// Converts a binary window file to CSV format
 fn convert_file(input_path: &PathBuf, output_path: &PathBuf, verbose: bool) -> io::Result<()> {
     if verbose {
@@ -38,7 +41,8 @@ fn convert_file(input_path: &PathBuf, output_path: &PathBuf, verbose: bool) -> i
     // Read and convert prime records
     let mut count = 0;
     loop {
-        thread::yield_now();
+        //thread::yield_now();
+        //thread::sleep(Duration::from_millis(10)); 
         let mut prime_bytes = [0u8; 8];
         let mut next_value_bytes = [0u8; 8];
         
@@ -49,6 +53,9 @@ fn convert_file(input_path: &PathBuf, output_path: &PathBuf, verbose: bool) -> i
                 let next_value = u64::from_le_bytes(next_value_bytes);
                 writeln!(writer, "{},{}", prime, next_value)?;
                 count += 1;
+                if  count % 100 == 0 {
+                    thread::sleep(Duration::from_millis(10)); // be nice to system.
+                }
             },
             Err(e) if e.kind() == io::ErrorKind::UnexpectedEof => break,
             Err(e) => return Err(e),
@@ -99,7 +106,6 @@ fn process_directory(directory_path: &Path,verbose:bool) -> io::Result<()> {
 
 
 /// Command line arguments for the binary to CSV converter
-
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 pub struct Cli {
@@ -114,9 +120,12 @@ pub struct Cli {
 
 fn main() -> Result<(), io::Error> {
     let args = Cli::parse();
-    if let Err(e) = process_directory(&args.input_directory, args.verbose) {
-        eprintln!("Error: {}", e);
-    }
-    println!("all done");
+    let elapsed = measure_elapsed_time(|| {
+        if let Err(e) = process_directory(&args.input_directory, args.verbose) {
+            eprintln!("Error: {}", e);
+        }
+    });
+    
+    println!("Sieve processing completed in {}", elapsed);
     Ok(())
 }
