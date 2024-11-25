@@ -15,7 +15,8 @@ fn convert_file(input_path: &PathBuf, output_path: &PathBuf, verbose: bool) -> i
         println!("convert_file invoked"); 
     }
     let file = File::open(input_path)?;
-    let mut reader = BufReader::new(file);
+    //let mut reader = BufReader::new(file);
+    let mut reader = BufReader::with_capacity(1024*1024*2,file);
 
     // Read range header
     let mut range_start_bytes = [0u8; 8];
@@ -33,16 +34,16 @@ fn convert_file(input_path: &PathBuf, output_path: &PathBuf, verbose: bool) -> i
     }
 
     // Create CSV file and write header
-    let output_file = File::create(output_path)?;
-    let mut writer: BufWriter<File> = BufWriter::new(output_file);
+    //let output_file = File::create(output_path)?;
+    let file = File::create(output_path).unwrap();
+    //let mut writer: BufWriter<File> = BufWriter::new(output_file);
+    let mut writer = BufWriter::with_capacity(1024*1024*2, file);
     writeln!(writer, "# Range: {} to {}", range_start, range_end)?;
     writeln!(writer, "prime,next_value")?;
 
     // Read and convert prime records
     let mut count = 0;
     loop {
-        //thread::yield_now();
-        //thread::sleep(Duration::from_millis(10)); 
         let mut prime_bytes = [0u8; 8];
         let mut next_value_bytes = [0u8; 8];
         
@@ -53,7 +54,9 @@ fn convert_file(input_path: &PathBuf, output_path: &PathBuf, verbose: bool) -> i
                 let next_value = u64::from_le_bytes(next_value_bytes);
                 writeln!(writer, "{},{}", prime, next_value)?;
                 count += 1;
-                if  count % 100 == 0 {
+
+                if  count % 100000 == 0 {
+                    thread::yield_now();
                     thread::sleep(Duration::from_millis(10)); // be nice to system.
                 }
             },
@@ -126,6 +129,6 @@ fn main() -> Result<(), io::Error> {
         }
     });
     
-    println!("Sieve processing completed in {}", elapsed);
+    println!("Sieve Window Binary to csv completed in {}", elapsed);
     Ok(())
 }
