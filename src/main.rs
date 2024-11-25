@@ -107,8 +107,12 @@ fn process_directory(directory_path: &Path,verbose:bool) -> io::Result<()> {
     Ok(())
 }
 
-#[derive(Parser)]
-#[command(author, version, about, long_about = None)]
+#[derive(Parser, Debug)]
+#[command(
+    version = "1.0",
+    about = "Convert sieve generated binary window file into csv text file.",
+    long_about = "Convert sieve generated binary window file into a csv text file."
+)]
 struct Cli {
     #[command(flatten)]
     input: InputArgs,
@@ -123,7 +127,7 @@ struct Cli {
 #[group(required = true, multiple = false)]
 pub struct InputArgs {
     /// Directory containing binary window files
-    #[arg(short = 'i', long = "input_directory")]
+    #[arg(short = 'd', long = "input_directory")]
     input_directory: PathBuf,
 
     /// File option
