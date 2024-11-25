@@ -2,7 +2,7 @@ use std::{fs, io};
 use std::path::{Path, PathBuf};
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Write, Read};
-use clap::Parser;
+use clap::{Parser,Args};
 use std::env;
 use std::thread;
 use std::time::Duration;
@@ -107,22 +107,37 @@ fn process_directory(directory_path: &Path,verbose:bool) -> io::Result<()> {
     Ok(())
 }
 
-
-/// Command line arguments for the binary to CSV converter
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
-pub struct Cli {
-    /// Directory containing binary window files
-    #[arg(short = 'i', long = "input_dir", required = true)]
-    input_directory: PathBuf,
+struct Cli {
+    #[command(flatten)]
+    input: InputArgs,
 
-    /// Enable verbose output
-    #[arg(short = 'v', long = "verbose")]
+    /// Verbose mode
+    #[arg(short = 'v', long = "verbose", action = clap::ArgAction::SetTrue)]
     verbose: bool,
 }
 
+/// Command line arguments for the binary to CSV converter
+#[derive(Args)]
+#[group(required = true, multiple = false)]
+pub struct InputArgs {
+    /// Directory containing binary window files
+    #[arg(short = 'i', long = "input_directory")]
+    input_directory: PathBuf,
+
+    /// File option
+    #[arg(short = 'f', long = "input_file")]
+    input_file: PathBuf,
+  
+    /// Help option
+    #[arg(short = 'h', long = "help")]
+    help: bool,
+
+}
+
 fn main() -> Result<(), io::Error> {
-    let args = Cli::parse();
+    let cli = Cli::parse();
     let elapsed = measure_elapsed_time(|| {
         if let Err(e) = process_directory(&args.input_directory, args.verbose) {
             eprintln!("Error: {}", e);
