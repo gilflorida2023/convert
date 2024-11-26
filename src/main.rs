@@ -4,18 +4,14 @@ use std::{fs, io};
 use std::path::{Path, PathBuf};
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Write, Read};
-use std::env;
-use std::thread;
-use std::time::Duration;
+//use std::env;
+//use std::thread;
+//use std::time::Duration;
 
 
 /// Converts a binary window file to CSV format
 fn convert_file(input_path: &PathBuf, output_path: &PathBuf, verbose: bool) -> io::Result<()> {
-    if verbose {
-        println!("convert_file invoked"); 
-    }
     let file = File::open(input_path)?;
-    //let mut reader = BufReader::new(file);
     let mut reader = BufReader::with_capacity(1024*1024*2,file);
 
     // Read range header
@@ -34,9 +30,7 @@ fn convert_file(input_path: &PathBuf, output_path: &PathBuf, verbose: bool) -> i
     }
 
     // Create CSV file and write header
-    //let output_file = File::create(output_path)?;
     let file = File::create(output_path).unwrap();
-    //let mut writer: BufWriter<File> = BufWriter::new(output_file);
     let mut writer = BufWriter::with_capacity(1024*1024*2, file);
     writeln!(writer, "# Range: {} to {}", range_start, range_end)?;
     writeln!(writer, "prime,next_value")?;
@@ -55,17 +49,17 @@ fn convert_file(input_path: &PathBuf, output_path: &PathBuf, verbose: bool) -> i
                 writeln!(writer, "{},{}", prime, next_value)?;
                 count += 1;
 
-                if  count % 100000 == 0 {
+                /*if  count % 100000 == 0 {
                     thread::yield_now();
                     thread::sleep(Duration::from_millis(10)); // be nice to system.
-                }
+                }*/
             },
             Err(e) if e.kind() == io::ErrorKind::UnexpectedEof => break,
             Err(e) => return Err(e),
         }
     }
     if verbose {
-    println!("Wrote {} prime records to {}", 
+        println!("Wrote {} prime records to {}", 
         count,
         output_path.file_name().unwrap().to_string_lossy());
     }
@@ -107,7 +101,6 @@ fn process_directory(directory_path: &Path,verbose:bool) -> io::Result<()> {
     Ok(())
 }
 
-
 //use crate::elapsed_time::measure_elapsed_time;
 mod elapsed_time;
 #[derive(Parser, Debug)]
@@ -135,10 +128,12 @@ struct Args {
 
 fn main() -> io::Result<()> {
     let args = Args::parse();
-    println!("{:?}", args);
     if let Some(input_directory) = args.input_directory.as_ref() {
         let input_path = Path::new(input_directory);
-        process_directory(input_path, args.verbose)?;
+        let elapsed_time = elapsed_time::measure_elapsed_time(|| {
+            let _ = process_directory(input_path, args.verbose);
+         });
+         println!("conversion of {:?} took {}.",input_path, elapsed_time);
     }  else if let Some(input_file) = args.input_file.as_ref() {
         let input_path = PathBuf::from(input_file);
         let mut output_path = input_path.clone();
@@ -146,7 +141,10 @@ fn main() -> io::Result<()> {
         if args.verbose {
             println!("converting from {:?} to {:?}.", input_path,output_path);
         }
-        convert_file(&input_path, &output_path, args.verbose)?;
+        let elapsed_time = elapsed_time::measure_elapsed_time(|| {
+            let _ = convert_file(&input_path, &output_path, args.verbose);
+         });
+         println!("conversion of {:?} took {}.",output_path, elapsed_time);
     }
     Ok(()) 
 }
