@@ -1,4 +1,50 @@
-use clap::{Parser, ArgGroup};
+use clap::{App, Arg, SubCommand};
+
+fn main() {
+    let matches = App::new("MyApp")
+        .version("1.0")
+        .author("Your Name")
+        .about("Does awesome things")
+        .arg(
+            Arg::with_name("input_file")
+                .short('i')
+                .long("input-file")
+                .takes_value(true)
+                .help("Specify an input file")
+        )
+        .arg(
+            Arg::with_name("input_directory")
+                .short('f')
+                .long("input-directory")
+                .takes_value(true)
+                .help("Specify an input directory"),
+        )
+        .group(
+            ArgGroup::new("exclusive_group")
+                .args(&["input_file", "input_directory"])
+                .multiple(false),
+        )
+        .subcommand(SubCommand::with_name("check")
+            .about("Check something")
+        )
+        .subcommand(SubCommand::with_name("verbose")
+            .about("Verbose mode"))
+        .get_matches();
+
+    if matches.is_present("input_file") && matches.is_present("input_directory") {
+        eprintln!("Error: -i and -f cannot be used together");
+        std::process::exit(1);
+    }
+
+    if let Some(matches) = matches.subcommand_matches("check") {
+        println!("Running check mode");
+        // Additional logic for the 'check' subcommand
+    } else if let Some(matches) = matches.subcommand_matches("verbose") {
+        println!("Verbose mode activated");
+        // Additional logic for the 'verbose' subcommand
+    }
+}
+/*use clap::{Parser, ArgGroup};
 extern crate is_prime;
 use is_prime::*;
 use std::{fs, io};
@@ -149,3 +195,4 @@ fn main() -> io::Result<()> {
     }
     Ok(()) 
 }
+*/
