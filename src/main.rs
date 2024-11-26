@@ -1,5 +1,6 @@
 use clap::{Parser, ArgGroup};
-
+extern crate is_prime;
+use is_prime::*;
 use std::{fs, io};
 use std::path::{Path, PathBuf};
 use std::fs::File;

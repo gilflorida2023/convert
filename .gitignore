@@ -1,4 +1,7 @@
 target/
+*.bz2
+*.bin
+*.csv
 data/
 .vscode/
 Cargo.lock
