@@ -1,43 +1,14 @@
 use clap::{Parser, ArgGroup};
 
-#[derive(Parser, Debug)]
-#[command(author, version, about, long_about = None)]
-#[clap(group(
-    ArgGroup::new("mode")
-        .required(true)
-        .args(&["input_directory", "input_file"]),
-))]
-struct Args {
-    /// Input parameter
-    #[arg(short = 'i', long = "input-directory", value_name = "INPUTDIRECTORY")]
-    input_directory: Option<String>,
-
-    /// File parameter
-    #[arg(short = 'f', long = "input-file", value_name = "INPUTFILE")]
-    input_file: Option<String>,
-
-    /// Verbose output
-    #[arg(short = 'v', long = "verbose")]
-    verbose: bool,
-}
-
-fn main() {
-    let args = Args::parse();
-    println!("{:?}", args);
-}
-
-
-/*use std::{fs, io};
+use std::{fs, io};
 use std::path::{Path, PathBuf};
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Write, Read};
-use clap::{Parser,Args};
 use std::env;
 use std::thread;
 use std::time::Duration;
-//use crate::elapsed_time::measure_elapsed_time;
 
-mod elapsed_time;
+
 /// Converts a binary window file to CSV format
 fn convert_file(input_path: &PathBuf, output_path: &PathBuf, verbose: bool) -> io::Result<()> {
     if verbose {
@@ -136,52 +107,46 @@ fn process_directory(directory_path: &Path,verbose:bool) -> io::Result<()> {
     Ok(())
 }
 
-#[derive(Parser, Debug)]
-#[command(
-    version = "1.0",
-    about = "Convert sieve generated binary window file into csv text file.",
-    long_about = "Convert sieve generated binary window file into a csv text file."
-)]
-struct Cli {
-    #[command(flatten)]
-    input: InputArgs,
 
-    /// Verbose mode
-    #[arg(short = 'v', long = "verbose", action = clap::ArgAction::SetTrue)]
+//use crate::elapsed_time::measure_elapsed_time;
+mod elapsed_time;
+#[derive(Parser, Debug)]
+#[command(author, version, 
+    about = "Convert sieve generated binary window file into a csv text file.", 
+    long_about = "Convert sieve generated binary window file into a csv text file.")]
+#[clap(group(
+    ArgGroup::new("mode")
+        .required(true)
+        .args(&["input_directory", "input_file"]),
+))]
+struct Args {
+    /// Input directory
+    #[arg(short = 'i', long = "input-directory", value_name = "INPUTDIRECTORY")]
+    input_directory: Option<String>,
+
+    /// Input file
+    #[arg(short = 'f', long = "input-file", value_name = "INPUTFILE")]
+    input_file: Option<String>,
+
+    /// Verbose output
+    #[arg(short = 'v', long = "verbose")]
     verbose: bool,
 }
 
-/// Command line arguments for the binary to CSV converter
-#[derive(Args,Debug)]
-#[group(required = true, multiple = false)]
-pub struct InputArgs {
-    /// Directory containing binary window files
-    #[arg(short = 'd', long = "input_directory")]
-    input_directory: PathBuf,
-
-    /// File option
-    #[arg(short = 'f', long = "input_file")]
-    input_file: PathBuf,
-  
-    /// Help option
-    #[arg(short = 'h', long = "help")]
-    help: bool,
-
+fn main() -> io::Result<()> {
+    let args = Args::parse();
+    println!("{:?}", args);
+    if let Some(input_directory) = args.input_directory.as_ref() {
+        let input_path = Path::new(input_directory);
+        process_directory(input_path, args.verbose)?;
+    }  else if let Some(input_file) = args.input_file.as_ref() {
+        let input_path = PathBuf::from(input_file);
+        let mut output_path = input_path.clone();
+        output_path.set_extension("csv"); // Change the extension to .csv
+        if args.verbose {
+            println!("converting from {:?} to {:?}.", input_path,output_path);
+        }
+        convert_file(&input_path, &output_path, args.verbose)?;
+    }
+    Ok(()) 
 }
-
-fn main() -> Result<(), io::Error> {
-    let cli = Cli::parse();
-
-    match cli.input {
-        InputArgs { input_directory: input_directory, .. } => println!("Input: {:?}", input_directory.to_str()),
-        InputArgs { input_file: input_file, .. } => println!("File: {:?}", input_file.to_str()),
-        InputArgs { help: true, .. } => println!("Help requested"),
-        _ => unreachable!(),
-    }
-
-    if cli.verbose {
-        println!("Verbose mode is enabled");
-    }
-    
-    Ok(())
-}*/
