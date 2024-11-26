@@ -1,4 +1,33 @@
-use std::{fs, io};
+use clap::{Parser, ArgGroup};
+
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+#[clap(group(
+    ArgGroup::new("mode")
+        .required(true)
+        .args(&["input_directory", "input_file"]),
+))]
+struct Args {
+    /// Input parameter
+    #[arg(short = 'i', long = "input-directory", value_name = "INPUTDIRECTORY")]
+    input_directory: Option<String>,
+
+    /// File parameter
+    #[arg(short = 'f', long = "input-file", value_name = "INPUTFILE")]
+    input_file: Option<String>,
+
+    /// Verbose output
+    #[arg(short = 'v', long = "verbose")]
+    verbose: bool,
+}
+
+fn main() {
+    let args = Args::parse();
+    println!("{:?}", args);
+}
+
+
+/*use std::{fs, io};
 use std::path::{Path, PathBuf};
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Write, Read};
@@ -6,7 +35,7 @@ use clap::{Parser,Args};
 use std::env;
 use std::thread;
 use std::time::Duration;
-use crate::elapsed_time::measure_elapsed_time;
+//use crate::elapsed_time::measure_elapsed_time;
 
 mod elapsed_time;
 /// Converts a binary window file to CSV format
@@ -123,7 +152,7 @@ struct Cli {
 }
 
 /// Command line arguments for the binary to CSV converter
-#[derive(Args)]
+#[derive(Args,Debug)]
 #[group(required = true, multiple = false)]
 pub struct InputArgs {
     /// Directory containing binary window files
@@ -142,12 +171,17 @@ pub struct InputArgs {
 
 fn main() -> Result<(), io::Error> {
     let cli = Cli::parse();
-    let elapsed = measure_elapsed_time(|| {
-        if let Err(e) = process_directory(&args.input_directory, args.verbose) {
-            eprintln!("Error: {}", e);
-        }
-    });
+
+    match cli.input {
+        InputArgs { input_directory: input_directory, .. } => println!("Input: {:?}", input_directory.to_str()),
+        InputArgs { input_file: input_file, .. } => println!("File: {:?}", input_file.to_str()),
+        InputArgs { help: true, .. } => println!("Help requested"),
+        _ => unreachable!(),
+    }
+
+    if cli.verbose {
+        println!("Verbose mode is enabled");
+    }
     
-    println!("Sieve Window Binary to csv completed in {}", elapsed);
     Ok(())
-}
+}*/
