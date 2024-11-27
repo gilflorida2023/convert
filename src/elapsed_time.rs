@@ -62,10 +62,20 @@ where
 pub fn format_duration(duration: std::time::Duration) -> String {
     let total_seconds = duration.as_secs();
     let hours = total_seconds / 3600;
+    let days = hours / 24;
+    let weeks = days / 7;
+    
+    let remaining_days = days % 7;
+    let remaining_hours = hours % 24;
     let minutes = (total_seconds % 3600) / 60;
     let seconds = total_seconds % 60;
     let milliseconds = duration.subsec_millis();
-    if hours > 0 {
+
+    if weeks > 0 {
+        format!("{}w {}d {}h {}m {}s {}ms", weeks, remaining_days, remaining_hours, minutes, seconds, milliseconds)
+    } else if days > 0 {
+        format!("{}d {}h {}m {}s {}ms", days, remaining_hours, minutes, seconds, milliseconds)
+    } else if hours > 0 {
         format!("{}h {}m {}s {}ms", hours, minutes, seconds, milliseconds)
     } else if minutes > 0 {
         format!("{}m {}s {}ms", minutes, seconds, milliseconds)
