@@ -1,42 +1,6 @@
 use clap::{Parser, Arg};
 
-#[derive(Parser)]
-struct Command {
-    #[clap(short = 'i', long = "input_directory", value_name = "INPUT_DIRECTORY")]
-    input_directory: Option<String>,
-
-    #[clap(short = 'f', long = "input_file", value_name = "INPUT_FILE")]
-    input_file: Option<String>,
-
-    #[clap(short = 'c', long = "check", default_value_t = false)]
-    check: bool,
-
-    #[clap(short = 'v', long = "verbose", default_value_t = false)]
-    verbose: bool,
-}
-
-fn main() {
-    let args = Command::parse();
-
-    if let Some(input_directory) = args.input_directory {
-        println!("Input Directory: {}", input_directory);
-    } else if let Some(input_file) = args.input_file {
-        println!("Input File: {}", input_file);
-    } else {
-        eprintln!("Either -i or -f must be specified");
-        std::process::exit(1);
-    }
-
-    if args.check {
-        println!("Check mode is enabled");
-    }
-
-    if args.verbose {
-        println!("Verbose mode is enabled");
-    }
-}
-/*
-use clap::{Parser, ArgGroup};
+//use clap::{Parser, ArgGroup};
 extern crate is_prime;
 use is_prime::*;
 use std::{fs, io};
@@ -46,6 +10,8 @@ use std::io::{BufReader, BufWriter, Write, Read};
 //use std::env;
 //use std::thread;
 //use std::time::Duration;
+//use crate::elapsed_time::measure_elapsed_time;
+mod elapsed_time;
 
 
 /// Converts a binary window file to CSV format
@@ -140,31 +106,59 @@ fn process_directory(directory_path: &Path,verbose:bool) -> io::Result<()> {
     Ok(())
 }
 
-//use crate::elapsed_time::measure_elapsed_time;
-mod elapsed_time;
-#[derive(Parser, Debug)]
+#[derive(Parser)]
 #[command(author, version, 
     about = "Convert sieve generated binary window file into a csv text file.", 
     long_about = "Convert sieve generated binary window file into a csv text file.")]
-#[clap(group(
-    ArgGroup::new("mode")
-        .required(true)
-        .args(&["input_directory", "input_file"]),
-))]
-struct Args {
-    /// Input directory
-    #[arg(short = 'i', long = "input-directory", value_name = "INPUTDIRECTORY")]
+struct Command {
+    #[clap(short = 'i', long = "input_directory", value_name = "INPUT_DIRECTORY")]
     input_directory: Option<String>,
 
-    /// Input file
-    #[arg(short = 'f', long = "input-file", value_name = "INPUTFILE")]
+    #[clap(short = 'f', long = "input_file", value_name = "INPUT_FILE")]
     input_file: Option<String>,
 
-    /// Verbose output
-    #[arg(short = 'v', long = "verbose")]
+    #[clap(short = 'c', long = "check", default_value_t = false)]
+    check: bool,
+
+    #[clap(short = 'v', long = "verbose", default_value_t = false)]
     verbose: bool,
 }
 
+fn main() {
+    let args = Command::parse();
+
+    if let Some(input_directory) = args.input_directory {
+        if args.verbose {
+            println!("Input Directory: {}", input_directory);
+        }
+        let input_path = Path::new(&input_directory);
+        let elapsed_time = elapsed_time::measure_elapsed_time(|| {
+            let _ = process_directory(input_path, args.verbose);
+         });
+         println!("conversion of {:?} took {}.",input_path, elapsed_time);
+    } else if let Some(input_file) = args.input_file {
+        let input_path = PathBuf::from(input_file);
+        let mut output_path = input_path.clone();
+        output_path.set_extension("csv"); // Change the extension to .csv
+        if args.verbose {
+            println!("converting from {:?} to {:?}.", input_path,output_path);
+        }
+        let elapsed_time = elapsed_time::measure_elapsed_time(|| {
+            let _ = convert_file(&input_path, &output_path, args.verbose);
+         });
+         println!("conversion of {:?} took {}.",output_path, elapsed_time);
+
+    } else {
+        eprintln!("Either -i or -f must be specified");
+        std::process::exit(1);
+    }
+
+    if args.check {
+        println!("Check mode is enabled");
+    }
+
+}
+/*
 fn main() -> io::Result<()> {
     let args = Args::parse();
     if let Some(input_directory) = args.input_directory.as_ref() {
