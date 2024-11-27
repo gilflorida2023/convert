@@ -1,12 +1,13 @@
 //use clap::{Parser, Arg};
 use clap::Parser;
 extern crate is_prime;
+extern crate elapsed_time;
 use is_prime::*;
 use std::{fs, io};
 use std::path::{Path, PathBuf};
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Write, Read};
-mod elapsed_time;
+//mod elapsed_time;
 
 /// Converts a binary window file to CSV format
 fn convert_file(input_path: &PathBuf, output_path: &PathBuf, verbose: bool, check: bool) -> io::Result<()> {

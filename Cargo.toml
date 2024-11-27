@@ -6,3 +6,4 @@ edition = "2021"
 [dependencies]
 clap = { version = "4.0.0", features = ["derive"] }
 is_prime = "2.0.9"
+elapsed_time = { git = "https://github.com/gilflorida2023/elapsed_time.git" }
