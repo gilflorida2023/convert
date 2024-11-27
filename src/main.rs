@@ -1,50 +1,42 @@
-use clap::{App, Arg, SubCommand};
+use clap::{Parser, Arg};
+
+#[derive(Parser)]
+struct Command {
+    #[clap(short = 'i', long = "input_directory", value_name = "INPUT_DIRECTORY")]
+    input_directory: Option<String>,
+
+    #[clap(short = 'f', long = "input_file", value_name = "INPUT_FILE")]
+    input_file: Option<String>,
+
+    #[clap(short = 'c', long = "check", default_value_t = false)]
+    check: bool,
+
+    #[clap(short = 'v', long = "verbose", default_value_t = false)]
+    verbose: bool,
+}
 
 fn main() {
-    let matches = App::new("MyApp")
-        .version("1.0")
-        .author("Your Name")
-        .about("Does awesome things")
-        .arg(
-            Arg::with_name("input_file")
-                .short('i')
-                .long("input-file")
-                .takes_value(true)
-                .help("Specify an input file")
-        )
-        .arg(
-            Arg::with_name("input_directory")
-                .short('f')
-                .long("input-directory")
-                .takes_value(true)
-                .help("Specify an input directory"),
-        )
-        .group(
-            ArgGroup::new("exclusive_group")
-                .args(&["input_file", "input_directory"])
-                .multiple(false),
-        )
-        .subcommand(SubCommand::with_name("check")
-            .about("Check something")
-        )
-        .subcommand(SubCommand::with_name("verbose")
-            .about("Verbose mode"))
-        .get_matches();
+    let args = Command::parse();
 
-    if matches.is_present("input_file") && matches.is_present("input_directory") {
-        eprintln!("Error: -i and -f cannot be used together");
+    if let Some(input_directory) = args.input_directory {
+        println!("Input Directory: {}", input_directory);
+    } else if let Some(input_file) = args.input_file {
+        println!("Input File: {}", input_file);
+    } else {
+        eprintln!("Either -i or -f must be specified");
         std::process::exit(1);
     }
 
-    if let Some(matches) = matches.subcommand_matches("check") {
-        println!("Running check mode");
-        // Additional logic for the 'check' subcommand
-    } else if let Some(matches) = matches.subcommand_matches("verbose") {
-        println!("Verbose mode activated");
-        // Additional logic for the 'verbose' subcommand
+    if args.check {
+        println!("Check mode is enabled");
+    }
+
+    if args.verbose {
+        println!("Verbose mode is enabled");
     }
 }
-/*use clap::{Parser, ArgGroup};
+/*
+use clap::{Parser, ArgGroup};
 extern crate is_prime;
 use is_prime::*;
 use std::{fs, io};
