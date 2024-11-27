@@ -15,7 +15,7 @@ mod elapsed_time;
 
 
 /// Converts a binary window file to CSV format
-fn convert_file(input_path: &PathBuf, output_path: &PathBuf, verbose: bool) -> io::Result<()> {
+fn convert_file(input_path: &PathBuf, output_path: &PathBuf, verbose: bool, check: bool) -> io::Result<()> {
     let file = File::open(input_path)?;
     let mut reader = BufReader::with_capacity(1024*1024*2,file);
 
@@ -38,7 +38,11 @@ fn convert_file(input_path: &PathBuf, output_path: &PathBuf, verbose: bool) -> i
     let file = File::create(output_path).unwrap();
     let mut writer = BufWriter::with_capacity(1024*1024*2, file);
     writeln!(writer, "# Range: {} to {}", range_start, range_end)?;
-    writeln!(writer, "prime,next_value")?;
+    if check {
+        writeln!(writer, "prime, next_value, is_prime")?;
+    } else {
+        writeln!(writer, "prime, next_value")?;
+    }
 
     // Read and convert prime records
     let mut count = 0;
@@ -51,7 +55,13 @@ fn convert_file(input_path: &PathBuf, output_path: &PathBuf, verbose: bool) -> i
                 reader.read_exact(&mut next_value_bytes)?;
                 let prime = u64::from_le_bytes(prime_bytes);
                 let next_value = u64::from_le_bytes(next_value_bytes);
-                writeln!(writer, "{},{}", prime, next_value)?;
+                if check {
+                    let strval: String = format!("{}", prime);
+                    let isprime : bool = is_prime(&strval);
+                    writeln!(writer, "{},{},{}", prime, next_value, isprime)?;
+                } else {
+                    writeln!(writer, "{},{}", prime, next_value)?;
+                }
                 count += 1;
 
                 /*if  count % 100000 == 0 {
@@ -71,7 +81,7 @@ fn convert_file(input_path: &PathBuf, output_path: &PathBuf, verbose: bool) -> i
     Ok(())
 }
 
-fn process_directory(directory_path: &Path,verbose:bool) -> io::Result<()> {
+fn process_directory(directory_path: &Path,verbose:bool,check:bool) -> io::Result<()> {
     // Check if the directory exists and is a directory
     if !directory_path.is_dir() {
         return Err(io::Error::new(io::ErrorKind::NotFound, "The path provided is not a directory"));
@@ -91,7 +101,7 @@ fn process_directory(directory_path: &Path,verbose:bool) -> io::Result<()> {
                                 if verbose {
                                     println!("converting from {:?} to {:?}.", input_path,output_path);
                                 }
-                                convert_file(&input_path, &output_path, verbose)?;
+                                convert_file(&input_path, &output_path, verbose, check)?;
                             }
                         }
                     }
@@ -133,7 +143,7 @@ fn main() {
         }
         let input_path = Path::new(&input_directory);
         let elapsed_time = elapsed_time::measure_elapsed_time(|| {
-            let _ = process_directory(input_path, args.verbose);
+            let _ = process_directory(input_path, args.verbose,args.check);
          });
          println!("conversion of {:?} took {}.",input_path, elapsed_time);
     } else if let Some(input_file) = args.input_file {
@@ -144,7 +154,7 @@ fn main() {
             println!("converting from {:?} to {:?}.", input_path,output_path);
         }
         let elapsed_time = elapsed_time::measure_elapsed_time(|| {
-            let _ = convert_file(&input_path, &output_path, args.verbose);
+            let _ = convert_file(&input_path, &output_path, args.verbose, args.check);
          });
          println!("conversion of {:?} took {}.",output_path, elapsed_time);
 
