@@ -1,4 +1,5 @@
-use clap::{Parser, Arg};
+//use clap::{Parser, Arg};
+use clap::Parser;
 extern crate is_prime;
 use is_prime::*;
 use std::{fs, io};
