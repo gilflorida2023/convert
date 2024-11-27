@@ -1,18 +1,11 @@
 use clap::{Parser, Arg};
-
-//use clap::{Parser, ArgGroup};
 extern crate is_prime;
 use is_prime::*;
 use std::{fs, io};
 use std::path::{Path, PathBuf};
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Write, Read};
-//use std::env;
-//use std::thread;
-//use std::time::Duration;
-//use crate::elapsed_time::measure_elapsed_time;
 mod elapsed_time;
-
 
 /// Converts a binary window file to CSV format
 fn convert_file(input_path: &PathBuf, output_path: &PathBuf, verbose: bool, check: bool) -> io::Result<()> {
@@ -117,78 +110,52 @@ fn process_directory(directory_path: &Path,verbose:bool,check:bool) -> io::Resul
 }
 
 #[derive(Parser)]
-#[command(author, version, 
-    about = "Convert sieve generated binary window file into a csv text file.", 
-    long_about = "Convert sieve generated binary window file into a csv text file.")]
-struct Command {
-    #[clap(short = 'i', long = "input_directory", value_name = "INPUT_DIRECTORY")]
-    input_directory: Option<String>,
+#[command(author, version, about, long_about = None)]
+#[command(group(
+    clap::ArgGroup::new("input")
+        .required(true)
+        .multiple(false)
+        .args(["input_file", "input_directory"]),
+))]
+struct Cli {
+    /// Input file path
+    #[arg(short = 'f', long, value_name = "INPUT_FILE", conflicts_with = "input_directory")]
+    input_file: Option<PathBuf>,
 
-    #[clap(short = 'f', long = "input_file", value_name = "INPUT_FILE")]
-    input_file: Option<String>,
+    /// Input directory path
+    #[arg(short = 'i', long, value_name = "INPUT_DIRECTORY", conflicts_with = "input_file")]
+    input_directory: Option<PathBuf>,
 
-    #[clap(short = 'c', long = "check", default_value_t = false)]
+    /// Enable check mode
+    #[arg(short = 'c', long, default_value_t = false)]
     check: bool,
 
-    #[clap(short = 'v', long = "verbose", default_value_t = false)]
+    /// Enable verbose output
+    #[arg(short = 'v', long, default_value_t = false)]
     verbose: bool,
 }
 
-fn main() {
-    let args = Command::parse();
-
-    if let Some(input_directory) = args.input_directory {
-        if args.verbose {
-            println!("Input Directory: {}", input_directory);
-        }
-        let input_path = Path::new(&input_directory);
-        let elapsed_time = elapsed_time::measure_elapsed_time(|| {
-            let _ = process_directory(input_path, args.verbose,args.check);
-         });
-         println!("conversion of {:?} took {}.",input_path, elapsed_time);
-    } else if let Some(input_file) = args.input_file {
-        let input_path = PathBuf::from(input_file);
-        let mut output_path = input_path.clone();
-        output_path.set_extension("csv"); // Change the extension to .csv
-        if args.verbose {
-            println!("converting from {:?} to {:?}.", input_path,output_path);
-        }
-        let elapsed_time = elapsed_time::measure_elapsed_time(|| {
-            let _ = convert_file(&input_path, &output_path, args.verbose, args.check);
-         });
-         println!("conversion of {:?} took {}.",output_path, elapsed_time);
-
-    } else {
-        eprintln!("Either -i or -f must be specified");
-        std::process::exit(1);
-    }
-
-    if args.check {
-        println!("Check mode is enabled");
-    }
-
-}
-/*
 fn main() -> io::Result<()> {
-    let args = Args::parse();
-    if let Some(input_directory) = args.input_directory.as_ref() {
-        let input_path = Path::new(input_directory);
+    let cli = Cli::parse();
+    
+    if let Some(input_file) = cli.input_file.as_ref() {
+        let output_path = input_file.with_extension("csv");
         let elapsed_time = elapsed_time::measure_elapsed_time(|| {
-            let _ = process_directory(input_path, args.verbose);
-         });
-         println!("conversion of {:?} took {}.",input_path, elapsed_time);
-    }  else if let Some(input_file) = args.input_file.as_ref() {
-        let input_path = PathBuf::from(input_file);
-        let mut output_path = input_path.clone();
-        output_path.set_extension("csv"); // Change the extension to .csv
-        if args.verbose {
-            println!("converting from {:?} to {:?}.", input_path,output_path);
-        }
+            if let Err(e) = convert_file(input_file, &output_path, cli.verbose, cli.check) {
+                eprintln!("Error processing file: {}", e);
+                std::process::exit(1);
+            }
+        });
+        println!("conversion of {:?} took {}.", output_path, elapsed_time);
+    } else if let Some(input_dir) = cli.input_directory.as_ref() {
         let elapsed_time = elapsed_time::measure_elapsed_time(|| {
-            let _ = convert_file(&input_path, &output_path, args.verbose);
-         });
-         println!("conversion of {:?} took {}.",output_path, elapsed_time);
+            if let Err(e) = process_directory(input_dir, cli.verbose, cli.check) {
+                eprintln!("Error processing directory: {}", e);
+                std::process::exit(1);
+            }
+        });
+        println!("conversion of {:?} took {}.", input_dir, elapsed_time);
     }
-    Ok(()) 
+    
+    Ok(())
 }
-*/
